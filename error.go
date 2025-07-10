@@ -16,7 +16,6 @@ type AppError interface {
 	Is(target error) bool
 	Unwrap() error
 
-	Log() AppError
 	LogError() AppError
 	LogWarn() AppError
 	LogInfo() AppError
@@ -126,11 +125,6 @@ func (e *AppCommonError) LogError() AppError {
 func (e *AppCommonError) LogDebug() AppError {
 	Debug().Int("code", e.code).Err(e.err).Caller(1).Send()
 	return e
-}
-
-// Log logs the AppError using the default logger.
-func (e *AppCommonError) Log() AppError {
-	return e.LogError()
 }
 
 // LogTrace logs the AppError at trace level using the default logger.
