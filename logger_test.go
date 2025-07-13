@@ -15,15 +15,19 @@ func TestSetLogger(t *testing.T) {
 	// Save original state
 	originalLogger := DefaultLogger
 	originalOutput := DefaultLogOutput
-	originalOnce := defaultLoggerOnce
 	defer func() {
 		DefaultLogger = originalLogger
 		DefaultLogOutput = originalOutput
-		defaultLoggerOnce = originalOnce
+		// Reset logger state properly
+		loggerMutex.Lock()
+		defaultLoggerOnce = sync.Once{}
+		loggerMutex.Unlock()
 	}()
 
 	// Reset state first
+	loggerMutex.Lock()
 	defaultLoggerOnce = sync.Once{}
+	loggerMutex.Unlock()
 
 	// Create a custom logger with buffer
 	var buf bytes.Buffer
@@ -32,9 +36,9 @@ func TestSetLogger(t *testing.T) {
 	// Set the custom logger
 	SetLogger(customLogger)
 
-	// Test that the logger was set by checking DefaultLogger
-	if &DefaultLogger == nil {
-		t.Error("DefaultLogger should not be nil")
+	// Test that the logger was set by checking if it's the same instance
+	if DefaultLogger.GetLevel() != zerolog.InfoLevel {
+		t.Error("DefaultLogger should be set to InfoLevel")
 	}
 
 	// Test logging with custom logger - use the DefaultLogger directly
@@ -56,11 +60,13 @@ func TestSetLogOutput(t *testing.T) {
 	// Save original state
 	originalOutput := DefaultLogOutput
 	originalLogger := DefaultLogger
-	originalOnce := defaultLoggerOnce
 	defer func() {
 		DefaultLogOutput = originalOutput
 		DefaultLogger = originalLogger
-		defaultLoggerOnce = originalOnce
+		// Reset logger state properly
+		loggerMutex.Lock()
+		defaultLoggerOnce = sync.Once{}
+		loggerMutex.Unlock()
 	}()
 
 	// Create a buffer for output
@@ -91,9 +97,11 @@ func TestSetLogOutput(t *testing.T) {
 }
 
 func TestGetLoggerConcurrency(t *testing.T) {
-	// Reset logger state
+	// Reset logger state safely
+	loggerMutex.Lock()
 	defaultLoggerOnce = sync.Once{}
 	DefaultLogOutput = nil
+	loggerMutex.Unlock()
 
 	const numGoroutines = 100
 	var wg sync.WaitGroup
@@ -124,7 +132,9 @@ func TestSetLogOutputConcurrency(t *testing.T) {
 	originalOutput := DefaultLogOutput
 	defer func() {
 		DefaultLogOutput = originalOutput
+		loggerMutex.Lock()
 		defaultLoggerOnce = sync.Once{}
+		loggerMutex.Unlock()
 	}()
 
 	const numGoroutines = 50
@@ -158,11 +168,12 @@ func TestLoggerFunctions(t *testing.T) {
 	// Save original state
 	originalOutput := DefaultLogOutput
 	originalLogger := DefaultLogger
-	originalOnce := defaultLoggerOnce
 	defer func() {
 		DefaultLogOutput = originalOutput
 		DefaultLogger = originalLogger
-		defaultLoggerOnce = originalOnce
+		loggerMutex.Lock()
+		defaultLoggerOnce = sync.Once{}
+		loggerMutex.Unlock()
 	}()
 
 	// Test all logger function wrappers
@@ -209,9 +220,11 @@ func TestLoggerFunctions(t *testing.T) {
 }
 
 func TestDefaultLoggerInitialization(t *testing.T) {
-	// Reset state
+	// Reset state safely
+	loggerMutex.Lock()
 	defaultLoggerOnce = sync.Once{}
 	DefaultLogOutput = nil
+	loggerMutex.Unlock()
 
 	// Get logger should initialize with stderr
 	logger := getLogger()
@@ -226,9 +239,11 @@ func TestDefaultLoggerInitialization(t *testing.T) {
 }
 
 func BenchmarkGetLogger(b *testing.B) {
-	// Reset state
+	// Reset state safely
+	loggerMutex.Lock()
 	defaultLoggerOnce = sync.Once{}
 	DefaultLogOutput = os.Stderr
+	loggerMutex.Unlock()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
