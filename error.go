@@ -1,9 +1,8 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 type AppError interface {
@@ -33,10 +32,12 @@ type AppCommonError struct {
 
 // Error implements the error interface.
 func (e *AppCommonError) Error() string {
-	if e.Is(Success) {
+	// Special handling for success code
+	if e.code == 0 {
 		if e.err == nil {
 			return ""
 		}
+		// For success with additional context, return only the context
 		return e.err.Error()
 	}
 
@@ -77,20 +78,35 @@ func (e *AppCommonError) Unwrap() error {
 // WithCause creates a new AppError instance based on the current AppError template (e)
 func (e *AppCommonError) WithCause(cause error) AppError {
 	if cause == nil {
-		return NewAppError(e.code, e.err.Error())
+		// Return a copy of the current error
+		return &AppCommonError{
+			code: e.code,
+			err:  e.err,
+		}
 	}
-	wrappedErr := fmt.Errorf("%s: %w", e.err.Error(), cause)
+
+	var baseMsg string
+	if e.err != nil {
+		baseMsg = e.err.Error()
+	}
+	wrappedErr := fmt.Errorf("%s: %w", baseMsg, cause)
 
 	return &AppCommonError{
 		code: e.code,
-		err:  wrappedErr, // Store the wrapped error chain
+		err:  wrappedErr,
 	}
 }
 
 // With adds formatted context to the current AppError's underlying error chain.
+// Returns a new AppError instance to avoid modifying the original.
 func (e *AppCommonError) With(format string, args ...any) AppError {
-	e.err = errors.Wrapf(e.err, format, args...)
-	return e
+	contextMsg := fmt.Sprintf(format, args...)
+	wrappedErr := fmt.Errorf("%s: %w", contextMsg, e.err)
+
+	return &AppCommonError{
+		code: e.code,
+		err:  wrappedErr,
+	}
 }
 
 // LogPanic logs the AppError at panic level using the default logger and panics.
@@ -142,11 +158,38 @@ func NewAppError(code int, msg string) AppError {
 	}
 }
 
+// Predefined common errors
 var (
-	Success = NewAppError(0, "success")
+	Success = &AppCommonError{code: 0, err: nil}
 )
 
 var (
 	Unknown   = NewAppError(-1, "unknown error")
 	ErrSystem = NewAppError(999999, "system error")
+
+	// Common application errors
+	ErrInvalidInput       = NewAppError(400, "invalid input")
+	ErrUnauthorized       = NewAppError(401, "unauthorized")
+	ErrForbidden          = NewAppError(403, "forbidden")
+	ErrNotFound           = NewAppError(404, "not found")
+	ErrConflict           = NewAppError(409, "conflict")
+	ErrInternalError      = NewAppError(500, "internal server error")
+	ErrServiceUnavailable = NewAppError(503, "service unavailable")
 )
+
+// IsAppError checks if an error is an AppError and returns it
+func IsAppError(err error) (*AppCommonError, bool) {
+	var appErr *AppCommonError
+	if errors.As(err, &appErr) {
+		return appErr, true
+	}
+	return nil, false
+}
+
+// GetErrorCode extracts the error code from an error, returns -1 if not an AppError
+func GetErrorCode(err error) int {
+	if appErr, ok := IsAppError(err); ok {
+		return appErr.Code()
+	}
+	return -1
+}

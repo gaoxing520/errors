@@ -16,6 +16,7 @@ var (
 	DefaultLogOutput io.Writer
 
 	defaultLoggerOnce sync.Once
+	loggerMutex       sync.RWMutex
 )
 
 // Trace returns a trace level logger event.
@@ -53,13 +54,37 @@ func Panic() *zerolog.Event {
 	return getLogger().Panic()
 }
 
+// SetLogger allows users to set a custom logger
+func SetLogger(logger zerolog.Logger) {
+	loggerMutex.Lock()
+	defer loggerMutex.Unlock()
+	DefaultLogger = logger
+}
+
+// SetLogOutput sets the output writer for the default logger
+func SetLogOutput(output io.Writer) {
+	loggerMutex.Lock()
+	defer loggerMutex.Unlock()
+	DefaultLogOutput = output
+	// Reset the logger to use new output
+	defaultLoggerOnce = sync.Once{}
+}
+
 func getLogger() *zerolog.Logger {
+	loggerMutex.RLock()
+	defer loggerMutex.RUnlock()
+
 	defaultLoggerOnce.Do(func() {
 		if DefaultLogOutput == nil {
 			DefaultLogOutput = os.Stderr
 		}
 
-		DefaultLogger = zerolog.New(DefaultLogOutput).With().Caller().Timestamp().Logger().Level(zerolog.ErrorLevel)
+		DefaultLogger = zerolog.New(DefaultLogOutput).
+			With().
+			Caller().
+			Timestamp().
+			Logger().
+			Level(zerolog.ErrorLevel)
 	})
 
 	return &DefaultLogger

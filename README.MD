@@ -241,6 +241,63 @@ func main() {
 }
 ```
 
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage
+make cover
+
+# Run benchmarks
+make bench
+
+# Run all checks (format, vet, test, bench)
+make all
+```
+
+### Creating a Release
+
+This project uses automated releases via GitHub Actions. To create a new release:
+
+```bash
+# Using the release script (recommended)
+./scripts/release.sh 25.07.10
+
+# Or using make
+make release VERSION=25.07.10
+
+# Check version before release
+./scripts/check-version.sh 25.07.10
+```
+
+See [docs/RELEASE.md](docs/RELEASE.md) for detailed release instructions.
+
+### Project Structure
+
+```
+├── error.go           # Core error types and functions
+├── logger.go          # Logging integration
+├── *_test.go         # Test files
+├── scripts/          # Release and utility scripts
+├── docs/             # Documentation
+└── .github/workflows/ # CI/CD workflows
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for your changes
+5. Run the test suite (`make all`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
 ## License
 
 This project is licensed under the [MIT LICENSE] - see the [LICENSE](LICENSE) file for details.
