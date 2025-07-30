@@ -1,5 +1,7 @@
 # Application Errors with Integrated Logging
 
+[English](README.MD) | [中文文档](docs/README_zh.md)
+
 `errors` is a Go package providing a structured approach to application-specific errors, incorporating integer error
 codes, error chaining, and seamless integration with the `zeralog` structured logging library.
 
@@ -274,7 +276,7 @@ make release VERSION=25.07.10
 ./scripts/check-version.sh 25.07.10
 ```
 
-See [docs/RELEASE.md](docs/RELEASE.md) for detailed release instructions.
+
 
 ### Project Structure
 
@@ -284,6 +286,7 @@ See [docs/RELEASE.md](docs/RELEASE.md) for detailed release instructions.
 ├── *_test.go         # Test files
 ├── scripts/          # Release and utility scripts
 ├── docs/             # Documentation
+│   └── README_zh.md  # Chinese documentation
 └── .github/workflows/ # CI/CD workflows
 ```
 

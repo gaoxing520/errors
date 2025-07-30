@@ -44,6 +44,13 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/rs/zerolog
+          - github.com/gaoxing520/errors
 
 linters:
   disable-all: true

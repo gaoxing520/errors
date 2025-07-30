@@ -134,20 +134,20 @@ func TestGetErrorCode(t *testing.T) {
 
 func TestPredefinedErrors(t *testing.T) {
 	tests := []struct {
+		name string
 		err  AppError
 		code int
-		name string
 	}{
-		{Success, 0, "Success"},
-		{Unknown, -1, "Unknown"},
-		{ErrSystem, 999999, "ErrSystem"},
-		{ErrInvalidInput, 400, "ErrInvalidInput"},
-		{ErrUnauthorized, 401, "ErrUnauthorized"},
-		{ErrForbidden, 403, "ErrForbidden"},
-		{ErrNotFound, 404, "ErrNotFound"},
-		{ErrConflict, 409, "ErrConflict"},
-		{ErrInternalError, 500, "ErrInternalError"},
-		{ErrServiceUnavailable, 503, "ErrServiceUnavailable"},
+		{"Success", Success, 0},
+		{"Unknown", Unknown, -1},
+		{"ErrSystem", ErrSystem, 999999},
+		{"ErrInvalidInput", ErrInvalidInput, 400},
+		{"ErrUnauthorized", ErrUnauthorized, 401},
+		{"ErrForbidden", ErrForbidden, 403},
+		{"ErrNotFound", ErrNotFound, 404},
+		{"ErrConflict", ErrConflict, 409},
+		{"ErrInternalError", ErrInternalError, 500},
+		{"ErrServiceUnavailable", ErrServiceUnavailable, 503},
 	}
 
 	for _, test := range tests {

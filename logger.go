@@ -10,13 +10,16 @@ import (
 
 var (
 	// DefaultLogger is the global zerolog logger instance used by this package's logging functions.
-	DefaultLogger zerolog.Logger
+	DefaultLogger *zerolog.Logger
 
 	// DefaultLogOutput is the default output writer for the logger if not set externally.
-	DefaultLogOutput io.Writer
+	DefaultLogOutput io.Writer = os.Stderr
 
-	defaultLoggerOnce sync.Once
-	loggerMutex       sync.RWMutex
+	// DefaultLogLevel is the default log level for the logger if not set externally.
+	DefaultLogLevel = zerolog.InfoLevel
+
+	// loggerMutex protects logger access and configuration
+	loggerMutex sync.RWMutex
 )
 
 // Trace returns a trace level logger event.
@@ -55,9 +58,10 @@ func Panic() *zerolog.Event {
 }
 
 // SetLogger allows users to set a custom logger
-func SetLogger(logger zerolog.Logger) {
+func SetLogger(logger *zerolog.Logger) {
 	loggerMutex.Lock()
 	defer loggerMutex.Unlock()
+
 	DefaultLogger = logger
 }
 
@@ -65,27 +69,47 @@ func SetLogger(logger zerolog.Logger) {
 func SetLogOutput(output io.Writer) {
 	loggerMutex.Lock()
 	defer loggerMutex.Unlock()
+
 	DefaultLogOutput = output
-	// Reset the logger to use new output
-	defaultLoggerOnce = sync.Once{}
+	DefaultLogger = nil // Force re-initialization
+}
+
+// SetLogLevel sets the log level for the default logger
+func SetLogLevel(level zerolog.Level) {
+	loggerMutex.Lock()
+	defer loggerMutex.Unlock()
+
+	DefaultLogLevel = level
+	DefaultLogger = nil // Force re-initialization
 }
 
 func getLogger() *zerolog.Logger {
+	// Fast path: read lock to check if initialized
 	loggerMutex.RLock()
-	defer loggerMutex.RUnlock()
+	if DefaultLogger != nil {
+		logger := DefaultLogger
+		loggerMutex.RUnlock()
+		return logger
+	}
+	loggerMutex.RUnlock()
 
-	defaultLoggerOnce.Do(func() {
-		if DefaultLogOutput == nil {
-			DefaultLogOutput = os.Stderr
-		}
+	// Slow path: write lock to initialize
+	loggerMutex.Lock()
+	defer loggerMutex.Unlock()
 
-		DefaultLogger = zerolog.New(DefaultLogOutput).
-			With().
-			Caller().
-			Timestamp().
-			Logger().
-			Level(zerolog.ErrorLevel)
-	})
+	// Double-check after acquiring write lock
+	if DefaultLogger != nil {
+		return DefaultLogger
+	}
 
-	return &DefaultLogger
+	// Initialize logger
+	newLogger := zerolog.New(DefaultLogOutput).
+		With().
+		Caller().
+		Timestamp().
+		Logger().
+		Level(DefaultLogLevel)
+	DefaultLogger = &newLogger
+
+	return DefaultLogger
 }

@@ -1,3 +1,5 @@
+// Package errors provides structured application-specific error handling with integer error codes,
+// error chaining, and seamless integration with zerolog structured logging.
 package errors
 
 import (
