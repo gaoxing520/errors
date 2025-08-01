@@ -66,16 +66,3 @@ check-release:
 	@git branch --show-current | grep -q "master" || (echo "❌ Not on master branch" && exit 1)
 	@go mod verify || (echo "❌ go.mod verification failed" && exit 1)
 	@echo "✅ Ready for release!"
-
-# Generate date-based version
-generate-version:
-	@./scripts/generate-version.sh
-
-# Create a new release
-release: check-release
-ifndef VERSION
-	@echo "❌ VERSION is required. Usage: make release VERSION=25.07.10"
-	@exit 1
-endif
-	@echo "Creating release $(VERSION)..."
-	@./scripts/release.sh $(VERSION)

@@ -297,30 +297,12 @@ make bench
 make all
 ```
 
-### 创建发布
-
-此项目使用通过GitHub Actions的自动发布。要创建新发布：
-
-```bash
-# 使用发布脚本（推荐）
-./scripts/release.sh 25.07.13
-
-# 或使用make
-make release VERSION=25.07.13
-
-# 发布前检查版本
-./scripts/check-version.sh 25.07.13
-```
-
-详细发布说明请参见 [docs/RELEASE.md](RELEASE.md)。
-
 ### 项目结构
 
 ```
 ├── error.go           # 核心错误类型和函数
 ├── logger.go          # 日志集成
 ├── *_test.go         # 测试文件
-├── scripts/          # 发布和工具脚本
 ├── docs/             # 文档
 │   └── README_zh.md  # 中文文档（本文件）
 └── .github/workflows/ # CI/CD工作流

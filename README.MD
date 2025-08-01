@@ -261,30 +261,12 @@ make bench
 make all
 ```
 
-### Creating a Release
-
-This project uses automated releases via GitHub Actions. To create a new release:
-
-```bash
-# Using the release script (recommended)
-./scripts/release.sh 25.07.10
-
-# Or using make
-make release VERSION=25.07.10
-
-# Check version before release
-./scripts/check-version.sh 25.07.10
-```
-
-
-
 ### Project Structure
 
 ```
 ├── error.go           # Core error types and functions
 ├── logger.go          # Logging integration
 ├── *_test.go         # Test files
-├── scripts/          # Release and utility scripts
 ├── docs/             # Documentation
 │   └── README_zh.md  # Chinese documentation
 └── .github/workflows/ # CI/CD workflows
