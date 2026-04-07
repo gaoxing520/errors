@@ -118,6 +118,22 @@ err.LogFatal() // Logs and exits the application
 err.LogPanic() // Logs and panics
 ```
 
+Note about nil receivers
+------------------------
+
+To make the logging helpers safe to call even when an `AppCommonError` pointer is `nil`, the Log* methods
+omit the `code` field when the receiver is `nil`. This prevents nil-pointer dereference panics in call sites
+that may have an absent error value. For example:
+
+```go
+var e *errors.AppCommonError = nil
+e.LogInfo() // safe: will log an info-level event but will not include a `code` field
+```
+
+This design choice favors robustness and avoids introducing a magic numeric default in logs. If you prefer a
+different behavior (for example: always including a default code), consider wrapping the call site or
+constructing a non-nil `AppCommonError` with the desired default code.
+
 ### Chaining Operations
 
 You can chain error operations for concise code:

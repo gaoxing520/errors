@@ -1,9 +1,13 @@
 package errors
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/rs/zerolog"
 )
 
 func TestNewAppError(t *testing.T) {
@@ -176,5 +180,65 @@ func TestChaining(t *testing.T) {
 	expected := "failed to process user alice: operation failed: database connection failed, code=1009"
 	if err.Error() != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, err.Error())
+	}
+}
+
+func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
+	var buf bytes.Buffer
+	// ensure all levels enabled
+	SetLogLevel(zerolog.TraceLevel)
+	SetLogOutput(&buf)
+
+	var e *AppCommonError = nil
+
+	// Call several logging methods; these should not panic and should produce output
+	buf.Reset()
+	e.LogInfo()
+	out := buf.String()
+	if out == "" {
+		t.Errorf("expected some log output for LogInfo(), got empty")
+	}
+	if strings.Contains(out, "\"code\"") {
+		t.Errorf("expected code field to be omitted for nil receiver, but found: %s", out)
+	}
+
+	buf.Reset()
+	e.LogWarn()
+	out = buf.String()
+	if out == "" {
+		t.Errorf("expected some log output for LogWarn(), got empty")
+	}
+	if strings.Contains(out, "\"code\"") {
+		t.Errorf("expected code field to be omitted for nil receiver, but found: %s", out)
+	}
+
+	buf.Reset()
+	e.LogError()
+	out = buf.String()
+	if out == "" {
+		t.Errorf("expected some log output for LogError(), got empty")
+	}
+	if strings.Contains(out, "\"code\"") {
+		t.Errorf("expected code field to be omitted for nil receiver, but found: %s", out)
+	}
+
+	buf.Reset()
+	e.LogDebug()
+	out = buf.String()
+	if out == "" {
+		t.Errorf("expected some log output for LogDebug(), got empty")
+	}
+	if strings.Contains(out, "\"code\"") {
+		t.Errorf("expected code field to be omitted for nil receiver, but found: %s", out)
+	}
+
+	buf.Reset()
+	e.LogTrace()
+	out = buf.String()
+	if out == "" {
+		t.Errorf("expected some log output for LogTrace(), got empty")
+	}
+	if strings.Contains(out, "\"code\"") {
+		t.Errorf("expected code field to be omitted for nil receiver, but found: %s", out)
 	}
 }
