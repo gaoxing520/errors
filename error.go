@@ -11,6 +11,9 @@ type AppError interface {
 	error
 
 	Code() int
+	// Msg returns the first-layer abstract message from NewAppError,
+	// without With/WithCause chain details. Suitable for API responses.
+	Msg() string
 
 	WithCause(cause error) AppError
 	With(format string, args ...any) AppError
@@ -30,9 +33,11 @@ type AppError interface {
 type AppCommonError struct {
 	err  error
 	code int
+	msg  string // stable public message; not changed by With/WithCause
 }
 
-// Error implements the error interface.
+// Error implements the error interface. Includes the full With/WithCause chain
+// and ", code=N" — use Msg() for API responses instead.
 func (e *AppCommonError) Error() string {
 	// Be defensive for nil receivers
 	if e == nil {
@@ -58,6 +63,14 @@ func (e *AppCommonError) Error() string {
 	}
 
 	return fmt.Sprintf("%s, code=%d", baseMsg, e.code)
+}
+
+// Msg returns the first-layer abstract message defined at NewAppError time.
+func (e *AppCommonError) Msg() string {
+	if e == nil {
+		return ""
+	}
+	return e.msg
 }
 
 // Code returns the application-specific error code.
@@ -107,6 +120,7 @@ func (e *AppCommonError) WithCause(cause error) AppError {
 		return &AppCommonError{
 			code: e.code,
 			err:  e.err,
+			msg:  e.msg,
 		}
 	}
 
@@ -115,6 +129,7 @@ func (e *AppCommonError) WithCause(cause error) AppError {
 		return &AppCommonError{
 			code: e.code,
 			err:  cause,
+			msg:  e.msg,
 		}
 	}
 
@@ -123,6 +138,7 @@ func (e *AppCommonError) WithCause(cause error) AppError {
 	return &AppCommonError{
 		code: e.code,
 		err:  wrappedErr,
+		msg:  e.msg,
 	}
 }
 
@@ -146,6 +162,7 @@ func (e *AppCommonError) With(format string, args ...any) AppError {
 	return &AppCommonError{
 		code: e.code,
 		err:  wrappedErr,
+		msg:  e.msg,
 	}
 }
 
@@ -224,6 +241,7 @@ func NewAppError(code int, msg string) AppError {
 	return &AppCommonError{
 		code: code,
 		err:  base,
+		msg:  msg,
 	}
 }
 

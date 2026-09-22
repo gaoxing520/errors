@@ -17,6 +17,10 @@ func TestNewAppError(t *testing.T) {
 		t.Errorf("Expected code 1001, got %d", err.Code())
 	}
 
+	if err.Msg() != "test error" {
+		t.Errorf("Expected Msg 'test error', got '%s'", err.Msg())
+	}
+
 	expected := "test error, code=1001"
 	if err.Error() != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, err.Error())
@@ -30,6 +34,25 @@ func TestSuccessError(t *testing.T) {
 
 	if Success.Error() != "" {
 		t.Errorf("Expected empty string for success, got '%s'", Success.Error())
+	}
+
+	if Success.Msg() != "" {
+		t.Errorf("Expected empty Msg for success, got '%s'", Success.Msg())
+	}
+}
+
+func TestMsgStableAcrossWithAndCause(t *testing.T) {
+	err := NewAppError(1003, "query database error").
+		With("load group failed").
+		WithCause(fmt.Errorf("record not found"))
+
+	if got := err.Msg(); got != "query database error" {
+		t.Errorf("Expected Msg 'query database error', got '%s'", got)
+	}
+
+	expectedError := "load group failed: query database error: record not found, code=1003"
+	if err.Error() != expectedError {
+		t.Errorf("Expected Error '%s', got '%s'", expectedError, err.Error())
 	}
 }
 
