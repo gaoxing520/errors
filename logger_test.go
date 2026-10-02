@@ -2,6 +2,7 @@ package errors
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -129,14 +130,14 @@ func TestLoggerFunctions(t *testing.T) {
 	SetLogOutput(&buf)
 
 	tests := []struct {
-		name string
 		fn   func() *zerolog.Event
+		name string
 	}{
-		{"Trace", Trace},
-		{"Debug", Debug},
-		{"Info", Info},
-		{"Warn", Warn},
-		{"Error", Error},
+		{Trace, "Trace"},
+		{Debug, "Debug"},
+		{Info, "Info"},
+		{Warn, "Warn"},
+		{Error, "Error"},
 	}
 
 	for _, test := range tests {
@@ -248,6 +249,43 @@ func TestDefaultLogLevel(t *testing.T) {
 	Error().Msg("default error test")
 	if !strings.Contains(buf.String(), "default error test") {
 		t.Error("Error should work with default InfoLevel")
+	}
+}
+
+func TestLoggerConfigConcurrent(t *testing.T) {
+	SetLogOutput(io.Discard)
+	SetLogLevel(zerolog.InfoLevel)
+
+	const numGoroutines = 32
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 40; j++ {
+				Info().Msg("concurrent")
+				SetLogLevel(zerolog.InfoLevel)
+				SetLogOutput(io.Discard)
+				logger := zerolog.New(io.Discard).Level(zerolog.InfoLevel)
+				SetLogger(&logger)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestPackageLoggerHasSingleCaller(t *testing.T) {
+	var buf bytes.Buffer
+	SetLogLevel(zerolog.InfoLevel)
+	SetLogOutput(&buf)
+
+	Info().Msg("caller check")
+	out := buf.String()
+	if strings.Count(out, `"caller"`) != 1 {
+		t.Fatalf("expected one caller field, got %d in %s", strings.Count(out, `"caller"`), out)
+	}
+	if !strings.Contains(out, "logger_test.go") {
+		t.Fatalf("caller should point at the test, got %s", out)
 	}
 }
 

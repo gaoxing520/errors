@@ -179,16 +179,18 @@ import (
 "github.com/gaoxing520/errors"
 )
 
-// Set custom output
-errors.DefaultLogOutput = os.Stdout
+// Set custom output. SetLogOutput is safe to call while other goroutines log.
+errors.SetLogOutput(os.Stdout)
 
-// Configure the default logger
-errors.DefaultLogger = zerolog.New(os.Stdout).
-With().
-Timestamp().
-Caller().
-Logger().
-Level(zerolog.InfoLevel)
+// Configure the default logger. Include Caller so events record one caller.
+// Log methods skip this wrapper frame instead of adding a second caller field.
+logger := zerolog.New(os.Stdout).
+	With().
+	Timestamp().
+	Caller().
+	Logger().
+	Level(zerolog.InfoLevel)
+errors.SetLogger(&logger)
 ```
 
 ### Complete Example
