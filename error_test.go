@@ -169,41 +169,32 @@ func TestGetErrorCode(t *testing.T) {
 }
 
 func TestErrorCodeDistinguishesNilAndUnknown(t *testing.T) {
-	code, ok := ErrorCode(nil)
-	if ok || code != -1 {
-		t.Errorf("nil: got (%d, %v), want (-1, false)", code, ok)
-	}
-
-	code, ok = ErrorCode(fmt.Errorf("plain"))
-	if ok || code != -1 {
-		t.Errorf("plain: got (%d, %v), want (-1, false)", code, ok)
-	}
-
-	code, ok = ErrorCode(Unknown)
-	if !ok || code != -1 {
-		t.Errorf("Unknown: got (%d, %v), want (-1, true)", code, ok)
-	}
-
-	code, ok = ErrorCode(Success)
-	if !ok || code != 0 {
-		t.Errorf("Success: got (%d, %v), want (0, true)", code, ok)
-	}
-
-	code, ok = ErrorCode(ErrNotFound)
-	if !ok || code != 404 {
-		t.Errorf("ErrNotFound: got (%d, %v), want (404, true)", code, ok)
-	}
-
 	var typed *AppCommonError
 	var asErr error = typed
-	if _, ok := IsAppError(asErr); ok {
-		t.Error("nil *AppCommonError stored in an error interface should not be an AppError")
+
+	tests := []struct {
+		err  error
+		name string
+		code int
+		ok   bool
+	}{
+		{nil, "nil", -1, false},
+		{fmt.Errorf("plain"), "plain", -1, false},
+		{Unknown, "Unknown", -1, true},
+		{Success, "Success", 0, true},
+		{ErrNotFound, "ErrNotFound", 404, true},
+		{asErr, "typed nil", -1, false},
 	}
-	code, ok = ErrorCode(asErr)
-	if ok || code != -1 {
-		t.Errorf("typed nil: got (%d, %v), want (-1, false)", code, ok)
+	for _, test := range tests {
+		code, ok := ErrorCode(test.err)
+		if ok != test.ok || code != test.code {
+			t.Errorf("%s: got (%d, %v), want (%d, %v)", test.name, code, ok, test.code, test.ok)
+		}
 	}
 
+	if _, found := IsAppError(asErr); found {
+		t.Error("nil *AppCommonError stored in an error interface should not be an AppError")
+	}
 	if NewAppError(1, "base").Is(asErr) {
 		t.Error("Is should not match a typed nil target")
 	}
@@ -214,20 +205,20 @@ func TestErrorCodeDistinguishesNilAndUnknown(t *testing.T) {
 
 func TestPredefinedErrors(t *testing.T) {
 	tests := []struct {
-		name string
 		err  AppError
+		name string
 		code int
 	}{
-		{"Success", Success, 0},
-		{"Unknown", Unknown, -1},
-		{"ErrSystem", ErrSystem, 999999},
-		{"ErrInvalidInput", ErrInvalidInput, 400},
-		{"ErrUnauthorized", ErrUnauthorized, 401},
-		{"ErrForbidden", ErrForbidden, 403},
-		{"ErrNotFound", ErrNotFound, 404},
-		{"ErrConflict", ErrConflict, 409},
-		{"ErrInternalError", ErrInternalError, 500},
-		{"ErrServiceUnavailable", ErrServiceUnavailable, 503},
+		{Success, "Success", 0},
+		{Unknown, "Unknown", -1},
+		{ErrSystem, "ErrSystem", 999999},
+		{ErrInvalidInput, "ErrInvalidInput", 400},
+		{ErrUnauthorized, "ErrUnauthorized", 401},
+		{ErrForbidden, "ErrForbidden", 403},
+		{ErrNotFound, "ErrNotFound", 404},
+		{ErrConflict, "ErrConflict", 409},
+		{ErrInternalError, "ErrInternalError", 500},
+		{ErrServiceUnavailable, "ErrServiceUnavailable", 503},
 	}
 
 	for _, test := range tests {
@@ -391,7 +382,7 @@ func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
 
 	// Call several logging methods; these should not panic and should produce output
 	buf.Reset()
-	e.LogInfo()
+	_ = e.LogInfo()
 	out := buf.String()
 	if out == "" {
 		t.Errorf("expected some log output for LogInfo(), got empty")
@@ -401,7 +392,7 @@ func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
 	}
 
 	buf.Reset()
-	e.LogWarn()
+	_ = e.LogWarn()
 	out = buf.String()
 	if out == "" {
 		t.Errorf("expected some log output for LogWarn(), got empty")
@@ -411,7 +402,7 @@ func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
 	}
 
 	buf.Reset()
-	e.LogError()
+	_ = e.LogError()
 	out = buf.String()
 	if out == "" {
 		t.Errorf("expected some log output for LogError(), got empty")
@@ -421,7 +412,7 @@ func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
 	}
 
 	buf.Reset()
-	e.LogDebug()
+	_ = e.LogDebug()
 	out = buf.String()
 	if out == "" {
 		t.Errorf("expected some log output for LogDebug(), got empty")
@@ -431,7 +422,7 @@ func TestNilReceiverLoggingDoesNotPanicAndOmitsCode(t *testing.T) {
 	}
 
 	buf.Reset()
-	e.LogTrace()
+	_ = e.LogTrace()
 	out = buf.String()
 	if out == "" {
 		t.Errorf("expected some log output for LogTrace(), got empty")
@@ -448,14 +439,14 @@ func TestNilReceiverLogReturnsNilError(t *testing.T) {
 
 	var e *AppCommonError
 	checks := []struct {
-		name string
 		fn   func() AppError
+		name string
 	}{
-		{"LogTrace", e.LogTrace},
-		{"LogDebug", e.LogDebug},
-		{"LogInfo", e.LogInfo},
-		{"LogWarn", e.LogWarn},
-		{"LogError", e.LogError},
+		{e.LogTrace, "LogTrace"},
+		{e.LogDebug, "LogDebug"},
+		{e.LogInfo, "LogInfo"},
+		{e.LogWarn, "LogWarn"},
+		{e.LogError, "LogError"},
 	}
 	for _, check := range checks {
 		buf.Reset()
@@ -482,7 +473,9 @@ func TestLogEventHasSingleCaller(t *testing.T) {
 	SetLogOutput(&buf)
 
 	err := NewAppError(1012, "logged")
-	err.LogError()
+	if got := err.LogError(); got != err {
+		t.Fatalf("LogError returned %#v", got)
+	}
 	out := buf.String()
 	if strings.Count(out, `"caller"`) != 1 {
 		t.Fatalf("expected one caller field, got %d in %s", strings.Count(out, `"caller"`), out)

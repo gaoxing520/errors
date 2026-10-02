@@ -130,14 +130,14 @@ func TestLoggerFunctions(t *testing.T) {
 	SetLogOutput(&buf)
 
 	tests := []struct {
-		name string
 		fn   func() *zerolog.Event
+		name string
 	}{
-		{"Trace", Trace},
-		{"Debug", Debug},
-		{"Info", Info},
-		{"Warn", Warn},
-		{"Error", Error},
+		{Trace, "Trace"},
+		{Debug, "Debug"},
+		{Info, "Info"},
+		{Warn, "Warn"},
+		{Error, "Error"},
 	}
 
 	for _, test := range tests {

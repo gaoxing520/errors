@@ -31,10 +31,11 @@ type AppError interface {
 }
 
 // AppCommonError represents an error with a specific code and an underlying cause.
+// Pointer fields come first so the garbage collector scans a smaller prefix.
 type AppCommonError struct {
 	err  error
-	code int
 	msg  string // stable public message; not changed by With/WithCause
+	code int
 }
 
 // Error implements the error interface. Includes the full With/WithCause chain
@@ -137,10 +138,11 @@ func (e *AppCommonError) WithCause(cause error) AppError {
 
 // linkedError keeps the previous chain and the new cause together.
 // Unwrap exposes both so errors.Is and errors.As can match either one.
+// Pointer fields come first so the garbage collector scans a smaller prefix.
 type linkedError struct {
-	msg   string
 	prev  error
 	cause error
+	msg   string
 }
 
 func (e *linkedError) Error() string {
