@@ -9,16 +9,23 @@ import (
 )
 
 var (
-	// DefaultLogger is the global zerolog logger instance used by this package's logging functions.
+	// DefaultLogger is the process-wide zerolog logger used by Trace, Debug, Info,
+	// and the AppError Log methods.
+	//
+	// SetLogger, SetLogOutput, and SetLogLevel take loggerMutex and are safe to call
+	// while other goroutines log. Assigning DefaultLogger, DefaultLogOutput, or
+	// DefaultLogLevel directly is not synchronized with those readers and will race.
 	DefaultLogger *zerolog.Logger
 
-	// DefaultLogOutput is the default output writer for the logger if not set externally.
+	// DefaultLogOutput is the writer used the next time the default logger is created.
+	// Concurrent changes must go through SetLogOutput.
 	DefaultLogOutput io.Writer = os.Stderr
 
-	// DefaultLogLevel is the default log level for the logger if not set externally.
+	// DefaultLogLevel is the level used the next time the default logger is created.
+	// Concurrent changes must go through SetLogLevel.
 	DefaultLogLevel = zerolog.InfoLevel
 
-	// loggerMutex protects logger access and configuration
+	// loggerMutex protects logger access and configuration.
 	loggerMutex sync.RWMutex
 )
 
